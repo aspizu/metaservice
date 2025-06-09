@@ -17,15 +17,15 @@ const MAX_AGE: u64 = 86400; // 1 day in seconds
 
 #[actix_web::main]
 async fn main() -> std::io::Result<()> {
-    let (host, port) = ("127.0.0.1", 8080);
+    let host = std::env::var("HOST").unwrap_or_else(|_| "127.0.0.1".to_owned());
+    let port = std::env::var("PORT").unwrap_or_else(|_| "8080".to_owned());
+    let port = port.parse::<u16>().expect("Invalid port number");
     println!("Server running at http://{}:{}", host, port);
     let app = HttpServer::new(|| {
         let client = reqwest::Client::builder()
-            .timeout(Duration::from_secs(10))
-            .pool_max_idle_per_host(10)
+            .timeout(Duration::from_secs(10)).pool_max_idle_per_host(10)
             .user_agent("Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/137.0.0.0 Safari/537.36")
-            .build()
-            .expect("Failed to create HTTP client");
+            .build().expect("Failed to create HTTP client");
         let cache: Cache<String, Result<MetaData, String>> =
             Cache::builder().time_to_live(Duration::new(MAX_AGE, 0)).build();
         App::new()
@@ -33,7 +33,7 @@ async fn main() -> std::io::Result<()> {
             .app_data(web::Data::new(cache))
             .service(link_preview)
     });
-    app.bind((host, port))?.run().await
+    app.bind((host.as_str(), port))?.run().await
 }
 
 const MAX_SIZE: usize = 1024 * 1024; // 1MB limit
