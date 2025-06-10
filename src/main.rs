@@ -1,5 +1,6 @@
 use std::time::Duration;
 
+use actix_cors::Cors;
 use actix_web::{
     App,
     HttpResponse,
@@ -29,6 +30,7 @@ async fn main() -> std::io::Result<()> {
         let cache: Cache<String, Result<MetaData, String>> =
             Cache::builder().time_to_live(Duration::new(MAX_AGE, 0)).build();
         App::new()
+            .wrap(Cors::permissive())
             .app_data(web::Data::new(client))
             .app_data(web::Data::new(cache))
             .service(link_preview)
